@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Eriador-Admin/eriador-model-catalog/main/local-models/v1/schema.json",
+  "title": "Eriador Local Model Catalog (v1)",
+  "description": "Canonical catalog of open-source LLMs. Every row in `models[]` describes one model — its family, size, per-tier hardware requirements, use cases, and (optionally) a Hugging Face GGUF pointer for direct download. Consumers fetch catalog.json, validate it against this schema, and render it as a model picker / recommendation UI. Fully public; no auth or credentials required to fetch.",
+  "type": "object",
+  "required": ["schema_version", "models"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "description": "Semver of the catalog schema. Bump the MAJOR when a required field changes shape or a required field is added — consumers are expected to refuse a catalog whose major exceeds their supported max (currently 1).",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "_meta": {
+      "type": "object",
+      "description": "Free-form catalog metadata. catalog_version is the field consumers surface as the version pill; bump on every published change.",
+      "additionalProperties": true,
+      "properties": {
+        "catalog_version": {
+          "type": "string",
+          "description": "Human-readable version stamp (e.g. \"2026.07.09-1\"). Bumped on every merge to main so ops can see at a glance whether a consumer is up to date. Convention: <YYYY.MM.DD>-<counter>."
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "Redundant copy of the top-level schema_version — accepted here so older tooling that read it out of _meta keeps working."
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "ISO date (YYYY-MM-DD) of the most recent edit."
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "The curated model list. Every row appears in the Models page (subject to hardware bucketing) and can be selected as a chat default. Order determines default display order when no hardware filter is applied.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ModelRow" }
+    }
+  },
+  "$defs": {
+    "ModelRow": {
+      "type": "object",
+      "required": ["model_id", "display_name", "size_gb", "min_ram_gb"],
+      "additionalProperties": true,
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "description": "Stable per-model identifier. For Ollama rows: the pull ref (e.g. 'llama3.1:8b'). For llama.cpp rows: still a stable id — the real download source is the `gguf` block.",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human label rendered in cards and dropdowns.",
+          "minLength": 1
+        },
+        "family": {
+          "type": "string",
+          "description": "Model family (llama, qwen, gemma, phi, deepseek, ...) — used for icons and group headers."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Publishing organization."
+        },
+        "param_count_b": {
+          "type": "number",
+          "description": "Parameter count in billions.",
+          "minimum": 0
+        },
+        "size_gb": {
+          "type": "number",
+          "description": "Approx on-disk size for the recommended quantization (Q4_K_M for most rows).",
+          "minimum": 0
+        },
+        "min_ram_gb": {
+          "type": "number",
+          "description": "Bare minimum RAM to load — will page heavily below this.",
+          "minimum": 0
+        },
+        "recommended_ram_gb": {
+          "type": "number",
+          "description": "Comfortable inference RAM (fits the model + generous KV cache).",
+          "minimum": 0
+        },
+        "min_vram_gb": {
+          "type": "number",
+          "description": "0 = CPU-only viable.",
+          "minimum": 0
+        },
+        "recommended_vram_gb": {
+          "type": "number",
+          "description": "GPU offload target (all layers).",
+          "minimum": 0
+        },
+        "use_cases": {
+          "type": "array",
+          "description": "Any of: chat, code, reasoning, embed, vision. Drives the use-case filter chips on the Models page.",
+          "items": {
+            "type": "string",
+            "enum": ["chat", "code", "reasoning", "embed", "vision"]
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-form guidance shown beneath the card."
+        },
+        "gguf": {
+          "type": "object",
+          "description": "Optional Hugging Face GGUF pointer. Present = a local llama.cpp-style runtime can download this model directly from Hugging Face. Missing = the row is runtime-registry-only (e.g. Ollama pull ref only).",
+          "required": ["repo_id", "filename"],
+          "additionalProperties": true,
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "description": "Hugging Face repo id (org/repo), e.g. 'bartowski/Meta-Llama-3.1-8B-Instruct-GGUF'.",
+              "pattern": "^[^/]+/[^/]+$"
+            },
+            "filename": {
+              "type": "string",
+              "description": "Exact .gguf filename inside the repo, e.g. 'Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf'.",
+              "pattern": "\\.gguf$"
+            },
+            "sha256": {
+              "description": "Hex digest for content-integrity verification. null until measured by scripts/verify-hf-urls.mjs against a pinned upstream version.",
+              "type": ["string", "null"],
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "size_bytes": {
+              "description": "Exact byte count for progress + disk-check preflight. null until measured.",
+              "type": ["integer", "null"],
+              "minimum": 0
+            },
+            "quant": {
+              "type": "string",
+              "description": "Informational quantization label (Q4_K_M, Q5_K_M, ...)."
+            }
+          }
+        }
+      }
+    }
+  }
+}
