@@ -1,10 +1,10 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "_meta": {
-    "schema_version": "1.0.0",
-    "catalog_version": "2026.07.09-2",
-    "description": "Curated open-source model catalog with per-model hardware requirements. Each row is bucketed as 'recommended' / 'possible' / 'insufficient' for the caller's detected hardware. Covers common families (Llama, Qwen, Gemma, Phi, DeepSeek, Mistral) plus longer-tail vendors (Moonshot / Kimi-VL, Cohere Command R / Aya, 01.AI Yi, BigCode StarCoder, NVIDIA Nemotron, AllenAI OLMo). Rows with a 'gguf' block include a Hugging Face pointer so a local llama.cpp-style runtime can download the weights directly.",
-    "last_updated": "2026-07-09",
+    "schema_version": "1.1.0",
+    "catalog_version": "2026.07.10-1",
+    "description": "Curated open-source model catalog with per-model hardware requirements. Each row is bucketed as 'recommended' / 'possible' / 'insufficient' for the caller's detected hardware. Covers common families (Llama, Qwen, Gemma, Phi, DeepSeek, Mistral) plus longer-tail vendors (Moonshot / Kimi K2 / Kimi-VL, Cohere Command R / Aya, 01.AI Yi, BigCode StarCoder, NVIDIA Nemotron, AllenAI OLMo, IBM Granite, HuggingFaceTB SmolLM2). Session 69 (2026-07-10) additions: Qwen 3, Gemma 3, Mistral Small 3.1, Magistral Small, QwQ 32B, gpt-oss 20B/120B, DeepSeek R1 Distill 1.5B, Granite 3.1 2B/8B, SmolLM2 (135M/360M/1.7B), Nemotron Nano 8B, plus frontier/custom-endpoint rows (Kimi K2, DeepSeek V3.1, DeepSeek R1 671B, Llama 4 Scout/Maverick, Qwen 3 235B-A22B) and the new `deployment_targets` field per §5.36 (Models + Connections IA). Rows with a 'gguf' block include a Hugging Face pointer so a local llama.cpp-style runtime can download the weights directly.",
+    "last_updated": "2026-07-10",
     "catalog_governance": {
       "canonical_source": "This file. Live at https://github.com/Eriador-Admin/eriador-model-catalog (public, MIT). Add / deprecate models via PR against local-models/v1/catalog.json on that repo — schema validation + Hugging Face URL reachability run in CI. Merging to main lands the change on every consumer within one refresh cycle.",
       "consumer_contract": "Consumers fetch this JSON over HTTPS at a stable URL, validate it against local-models/v1/schema.json, and fall back to their own bundled copy if the remote is unreachable or the payload fails validation. See the schema for required per-row fields (model_id, display_name, size_gb, min_ram_gb) and the optional gguf block shape.",
@@ -24,9 +24,12 @@
       "recommended_vram_gb": "GPU offload target (all layers).",
       "use_cases": "Any of: chat, code, reasoning, embed, vision.",
       "notes": "Free-form guidance for the recommendation UI.",
-      "gguf": "OPTIONAL block. Populated when a row is downloadable by a local llama.cpp-style runtime. Shape: { repo_id: HF org/repo (e.g. 'bartowski/Meta-Llama-3.1-8B-Instruct-GGUF'), filename: exact .gguf file (e.g. 'Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf'), sha256: hex digest for integrity verification (null until verified), size_bytes: exact byte count (null until measured), quant: 'Q4_K_M' / 'Q5_K_M' / etc (informational) }. Rows without this block are runtime-registry-only (e.g. Ollama pull ref only)."
+      "gguf": "OPTIONAL block. Populated when a row is downloadable by a local llama.cpp-style runtime. Shape: { repo_id: HF org/repo (e.g. 'bartowski/Meta-Llama-3.1-8B-Instruct-GGUF'), filename: exact .gguf file (e.g. 'Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf'), sha256: hex digest for integrity verification (null until verified), size_bytes: exact byte count (null until measured), quant: 'Q4_K_M' / 'Q5_K_M' / etc (informational) }. Rows without this block are runtime-registry-only (e.g. Ollama pull ref only).",
+      "deployment_targets": "OPTIONAL array (schema 1.1+, §5.36 Models + Connections IA). Enumerates which platform surfaces are capable of hosting this model. Missing = treat as ['local'] for backward compatibility with the pre-1.1 catalog. Valid members: 'local' (Ollama / llama.cpp / LM Studio on-device at the row's stated hardware), 'custom_endpoint' (self-hosted OpenAI-compatible server the user brings — vLLM / SGLang / TGI / TabbyAPI / remote llama-server), 'emulator' (Belfalas Emulators-advertised endpoint over an ollama/llama_cpp/lm_studio/openai_compat capability), 'cloud_provider' (served by at least one BYOK cloud SaaS such as OpenRouter, Groq, Together, DeepInfra, Cerebras). Frontier open-weight rows (Kimi K2, DeepSeek V3.1, Llama 4 Maverick) typically carry ['custom_endpoint'] or ['custom_endpoint','emulator','cloud_provider'] — laptop-impossible but real via other surfaces.",
+      "cloud_provider_availability": "OPTIONAL array (paired with deployment_targets including 'cloud_provider'). Lists the known BYOK provider_keys that serve this model as of the catalog_version date. Advisory only — the actual runtime routing uses the tenant/user's configured providers and each provider's /v1/models discovery, not this list."
     },
-    "gguf_status": "Many rows carry a gguf pointer but currently ship sha256=null / size_bytes=null. Downloads will succeed but integrity verification is skipped until measured values are backfilled against pinned upstream versions — see scripts/verify-hf-urls.mjs."
+    "gguf_status": "Many rows carry a gguf pointer but currently ship sha256=null / size_bytes=null. Downloads will succeed but integrity verification is skipped until measured values are backfilled against pinned upstream versions — see scripts/verify-hf-urls.mjs.",
+    "deployment_targets_status": "Session 69 backfill (2026-07-10) — every pre-existing row now carries an explicit deployment_targets array. Local-viable rows are ['local'] (many also ['local','cloud_provider'] when a hosted API is known to serve the same weights). Frontier rows ship ['custom_endpoint', ...] and deliberately no 'local' — those show up in the Models UI (§5.36 PR B) with an 'attach endpoint' CTA rather than an 'install locally' CTA. This field is the primary router for the future Models > Recommended cards."
   },
   "models": [
     {
@@ -41,6 +44,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 2,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Tiny — good for edge devices, low-latency draft assist, or a fallback when nothing else fits."
     },
     {
@@ -55,6 +59,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 3,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Small Google chat model — solid on modest laptops."
     },
     {
@@ -69,6 +74,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 4,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Strong multilingual chat at 3B."
     },
     {
@@ -83,6 +89,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 4,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Meta's small chat model — great baseline for 8GB machines.",
       "gguf": {
         "repo_id": "bartowski/Llama-3.2-3B-Instruct-GGUF",
@@ -104,6 +111,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 4,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Punches above its weight on reasoning + code for a 4B model.",
       "gguf": {
         "repo_id": "microsoft/Phi-3-mini-4k-instruct-gguf",
@@ -125,6 +133,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Classic 7B chat baseline. Fast on modern laptops.",
       "gguf": {
         "repo_id": "bartowski/Mistral-7B-Instruct-v0.3-GGUF",
@@ -146,6 +155,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Fully-open model — training data, code, and weights are all public. Good baseline when transparency matters.",
       "gguf": {
         "repo_id": "bartowski/OLMo-2-1124-7B-Instruct-GGUF",
@@ -167,6 +177,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["cohere"],
       "notes": "Cohere's multilingual chat model — 23 languages including Chinese, Arabic, Hindi.",
       "gguf": {
         "repo_id": "bartowski/aya-23-8B-GGUF",
@@ -188,6 +200,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 10,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "01.AI's mid-size chat model. Strong at long-context tasks (up to 32K).",
       "gguf": {
         "repo_id": "bartowski/Yi-1.5-9B-Chat-16K-GGUF",
@@ -209,6 +222,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Code-completion model trained on 17 languages. Complements chat models — pair for IDE assist.",
       "gguf": {
         "repo_id": "bartowski/starcoder2-7b-GGUF",
@@ -230,6 +244,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["vision", "chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Moonshot AI's MoE vision-language model. 16B total but only 3B active per token — fast for a VLM.",
       "gguf": {
         "repo_id": "moonshotai/Kimi-VL-A3B-Instruct",
@@ -251,6 +266,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Strongest general-purpose 7B as of late 2025."
     },
     {
@@ -265,6 +282,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra", "cerebras"],
       "notes": "The default 'good chat model on a 16GB laptop'.",
       "gguf": {
         "repo_id": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
@@ -286,6 +305,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Best 7B coding model — pair with agents doing edits + refactors."
     },
     {
@@ -300,6 +321,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Older but still useful when you want a smaller coder."
     },
     {
@@ -314,6 +336,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 8,
       "use_cases": ["reasoning", "chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra"],
       "notes": "Distilled reasoning model with visible chain-of-thought."
     },
     {
@@ -328,6 +352,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 10,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra"],
       "notes": "Notably strong at instruction following for a 9B."
     },
     {
@@ -342,6 +368,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 12,
       "use_cases": ["vision", "chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter"],
       "notes": "Image + text input. First-choice local VLM."
     },
     {
@@ -356,6 +384,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 12,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["mistral_api", "together", "openrouter"],
       "notes": "128K context, strong multilingual. Comfortable sweet-spot on 16GB machines.",
       "gguf": {
         "repo_id": "bartowski/Mistral-Nemo-Instruct-2407-GGUF",
@@ -377,6 +407,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 12,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Fully-open 13B — best transparency-first option in this class.",
       "gguf": {
         "repo_id": "bartowski/OLMo-2-1124-13B-Instruct-GGUF",
@@ -398,6 +429,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 12,
       "use_cases": ["chat", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Reasoning-heavy tasks at 14B."
     },
     {
@@ -412,6 +444,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 14,
       "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["azure_openai", "together", "openrouter", "deepinfra"],
       "notes": "Microsoft's 2024 flagship 14B. Benchmarks near 70B-class on math / reasoning.",
       "gguf": {
         "repo_id": "bartowski/phi-4-GGUF",
@@ -433,6 +467,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 14,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Best-in-class code assistant when you want more headroom than the 7B.",
       "gguf": {
         "repo_id": "bartowski/Qwen2.5-Coder-14B-Instruct-GGUF",
@@ -454,6 +490,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 16,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Largest StarCoder2. Wide language coverage — good for polyglot codebases.",
       "gguf": {
         "repo_id": "bartowski/starcoder2-15b-instruct-v0.1-GGUF",
@@ -475,6 +512,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 14,
       "use_cases": ["reasoning", "chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Solid reasoning at 14B — comfortable on 32GB machines."
     },
     {
@@ -489,6 +528,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 14,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Best all-around when you have 24GB+ RAM."
     },
     {
@@ -503,6 +544,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 12,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Older Code Llama variant."
     },
     {
@@ -517,6 +559,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 18,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["mistral_api", "together", "openrouter"],
       "notes": "Mistral's 2024 mid-size. Excellent quality/RAM ratio between the 12B and the 32B/70B tiers.",
       "gguf": {
         "repo_id": "bartowski/Mistral-Small-Instruct-2409-GGUF",
@@ -538,6 +582,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["chat", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "01.AI's flagship. Reasoning-focused; strong Chinese + English.",
       "gguf": {
         "repo_id": "bartowski/Yi-1.5-34B-Chat-16K-GGUF",
@@ -559,6 +604,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["cohere"],
       "notes": "Cohere's RAG-optimized model. Tuned for retrieval-augmented workflows and function-calling.",
       "gguf": {
         "repo_id": "bartowski/c4ai-command-r-08-2024-GGUF",
@@ -580,6 +627,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["cohere"],
       "notes": "Cohere's flagship multilingual model — 23 languages, strong non-English performance.",
       "gguf": {
         "repo_id": "bartowski/aya-23-35B-GGUF",
@@ -601,6 +650,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 32,
       "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["mistral_api", "together", "openrouter", "groq"],
       "notes": "MoE — only ~12B params active per token, so quality per RAM is great.",
       "gguf": {
         "repo_id": "bartowski/Mixtral-8x7B-Instruct-v0.1-GGUF",
@@ -622,6 +673,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["chat", "code", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Sweet spot for workstations with 48-64GB or a 24GB GPU."
     },
     {
@@ -636,6 +689,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "State-of-the-art open coder as of late 2025. Rivals proprietary APIs."
     },
     {
@@ -650,6 +705,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["code"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Legacy but still capable code model."
     },
     {
@@ -664,6 +720,8 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 24,
       "use_cases": ["reasoning", "chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra", "groq"],
       "notes": "Top-tier reasoning under 40GB VRAM."
     },
     {
@@ -678,6 +736,8 @@
       "min_vram_gb": 40,
       "recommended_vram_gb": 48,
       "use_cases": ["chat", "code", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra", "cerebras"],
       "notes": "GPT-4-class capability on a single 48GB GPU (A6000/L40S/6000 Ada).",
       "gguf": {
         "repo_id": "bartowski/Llama-3.3-70B-Instruct-GGUF",
@@ -699,6 +759,8 @@
       "min_vram_gb": 40,
       "recommended_vram_gb": 48,
       "use_cases": ["chat", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter"],
       "notes": "NVIDIA's post-training refinement of Llama 3.1 70B. Beats the base 3.1 70B on many benchmarks.",
       "gguf": {
         "repo_id": "bartowski/Llama-3.1-Nemotron-70B-Instruct-HF-GGUF",
@@ -720,6 +782,8 @@
       "min_vram_gb": 40,
       "recommended_vram_gb": 48,
       "use_cases": ["reasoning", "chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra", "groq"],
       "notes": "Distilled R1 at 70B — needs serious hardware but rivals o1-mini."
     },
     {
@@ -734,10 +798,605 @@
       "min_vram_gb": 64,
       "recommended_vram_gb": 96,
       "use_cases": ["chat", "reasoning"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["cohere"],
       "notes": "Cohere's flagship. Tuned for enterprise RAG + agentic tool-use at scale. Serious workstation only.",
       "gguf": {
         "repo_id": "bartowski/c4ai-command-r-plus-08-2024-GGUF",
         "filename": "c4ai-command-r-plus-08-2024-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "smollm2:135m",
+      "display_name": "SmolLM2 135M",
+      "family": "smollm",
+      "vendor": "HuggingFaceTB",
+      "param_count_b": 0.135,
+      "size_gb": 0.15,
+      "min_ram_gb": 2,
+      "recommended_ram_gb": 2,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 1,
+      "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
+      "notes": "Ultra-tiny — for constrained devices, low-latency draft assist, or as a router/classifier under a bigger model. Not for standalone assistant use.",
+      "gguf": {
+        "repo_id": "HuggingFaceTB/SmolLM2-135M-Instruct-GGUF",
+        "filename": "smollm2-135m-instruct-q4_k_m.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "smollm2:360m",
+      "display_name": "SmolLM2 360M",
+      "family": "smollm",
+      "vendor": "HuggingFaceTB",
+      "param_count_b": 0.362,
+      "size_gb": 0.35,
+      "min_ram_gb": 2,
+      "recommended_ram_gb": 3,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 1,
+      "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
+      "notes": "Small enough to run on a Raspberry Pi 5 or an old laptop. Reasonable for FAQ-style chat.",
+      "gguf": {
+        "repo_id": "HuggingFaceTB/SmolLM2-360M-Instruct-GGUF",
+        "filename": "smollm2-360m-instruct-q4_k_m.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "smollm2:1.7b",
+      "display_name": "SmolLM2 1.7B",
+      "family": "smollm",
+      "vendor": "HuggingFaceTB",
+      "param_count_b": 1.71,
+      "size_gb": 1.1,
+      "min_ram_gb": 3,
+      "recommended_ram_gb": 4,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 2,
+      "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
+      "notes": "Best small-parameter chat model as of late 2024 for its size. Better than Llama 3.2 1B on most benchmarks.",
+      "gguf": {
+        "repo_id": "HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF",
+        "filename": "smollm2-1.7b-instruct-q4_k_m.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "deepseek-r1:1.5b",
+      "display_name": "DeepSeek R1 Distill Qwen 1.5B",
+      "family": "deepseek",
+      "vendor": "DeepSeek",
+      "param_count_b": 1.78,
+      "size_gb": 1.1,
+      "min_ram_gb": 4,
+      "recommended_ram_gb": 6,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 2,
+      "use_cases": ["reasoning", "chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
+      "notes": "Smallest R1 distill — visible chain-of-thought on hardware that couldn't touch a 7B. Great for reasoning experiments.",
+      "gguf": {
+        "repo_id": "bartowski/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+        "filename": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "granite3.1:2b",
+      "display_name": "Granite 3.1 2B",
+      "family": "granite",
+      "vendor": "IBM",
+      "param_count_b": 2.53,
+      "size_gb": 1.5,
+      "min_ram_gb": 4,
+      "recommended_ram_gb": 6,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 3,
+      "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["watsonx", "openrouter"],
+      "notes": "IBM's small enterprise model. Trained with governance/attribution focus. Apache 2.0.",
+      "gguf": {
+        "repo_id": "bartowski/granite-3.1-2b-instruct-GGUF",
+        "filename": "granite-3.1-2b-instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gemma3:1b",
+      "display_name": "Gemma 3 1B",
+      "family": "gemma",
+      "vendor": "Google",
+      "param_count_b": 1.0,
+      "size_gb": 0.9,
+      "min_ram_gb": 3,
+      "recommended_ram_gb": 4,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 2,
+      "use_cases": ["chat"],
+      "deployment_targets": ["local", "custom_endpoint"],
+      "notes": "Google's 2025 refresh — text-only at 1B, multimodal starts at 4B. Long context (32K).",
+      "gguf": {
+        "repo_id": "bartowski/gemma-3-1b-it-GGUF",
+        "filename": "gemma-3-1b-it-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gemma3:4b",
+      "display_name": "Gemma 3 4B",
+      "family": "gemma",
+      "vendor": "Google",
+      "param_count_b": 4.3,
+      "size_gb": 2.6,
+      "min_ram_gb": 6,
+      "recommended_ram_gb": 8,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 4,
+      "use_cases": ["chat", "vision"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["google_ai", "openrouter"],
+      "notes": "First multimodal Gemma 3 tier — image + text input. 128K context. Good sweet-spot on modest laptops.",
+      "gguf": {
+        "repo_id": "bartowski/gemma-3-4b-it-GGUF",
+        "filename": "gemma-3-4b-it-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gemma3:12b",
+      "display_name": "Gemma 3 12B",
+      "family": "gemma",
+      "vendor": "Google",
+      "param_count_b": 12.2,
+      "size_gb": 7.3,
+      "min_ram_gb": 14,
+      "recommended_ram_gb": 18,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 12,
+      "use_cases": ["chat", "vision"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["google_ai", "openrouter"],
+      "notes": "Multimodal at 12B. 128K context. Strong replacement for Gemma 2 9B on 16GB machines.",
+      "gguf": {
+        "repo_id": "bartowski/gemma-3-12b-it-GGUF",
+        "filename": "gemma-3-12b-it-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gemma3:27b",
+      "display_name": "Gemma 3 27B",
+      "family": "gemma",
+      "vendor": "Google",
+      "param_count_b": 27.4,
+      "size_gb": 16.5,
+      "min_ram_gb": 28,
+      "recommended_ram_gb": 40,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 20,
+      "use_cases": ["chat", "vision", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["google_ai", "together", "openrouter"],
+      "notes": "Gemma 3 flagship. Multimodal, long-context (128K). Best open Google model for workstations.",
+      "gguf": {
+        "repo_id": "bartowski/gemma-3-27b-it-GGUF",
+        "filename": "gemma-3-27b-it-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwen3:4b",
+      "display_name": "Qwen 3 4B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 4.0,
+      "size_gb": 2.5,
+      "min_ram_gb": 6,
+      "recommended_ram_gb": 8,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 4,
+      "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint"],
+      "notes": "Qwen 3 small tier — hybrid reasoning (fast / think toggle). Strong for its size.",
+      "gguf": {
+        "repo_id": "Qwen/Qwen3-4B-Instruct-GGUF",
+        "filename": "Qwen3-4B-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwen3:8b",
+      "display_name": "Qwen 3 8B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 8.2,
+      "size_gb": 5.0,
+      "min_ram_gb": 10,
+      "recommended_ram_gb": 14,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 8,
+      "use_cases": ["chat", "code", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
+      "notes": "Qwen 3 general-purpose 8B — direct successor to the widely-used Qwen 2.5 7B. Hybrid reasoning.",
+      "gguf": {
+        "repo_id": "Qwen/Qwen3-8B-Instruct-GGUF",
+        "filename": "Qwen3-8B-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwen3:14b",
+      "display_name": "Qwen 3 14B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 14.8,
+      "size_gb": 9.0,
+      "min_ram_gb": 18,
+      "recommended_ram_gb": 24,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 14,
+      "use_cases": ["chat", "code", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
+      "notes": "Qwen 3 mid-tier. Best all-around chat + code + reasoning under 30B.",
+      "gguf": {
+        "repo_id": "Qwen/Qwen3-14B-Instruct-GGUF",
+        "filename": "Qwen3-14B-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwen3:32b",
+      "display_name": "Qwen 3 32B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 32.8,
+      "size_gb": 19.5,
+      "min_ram_gb": 32,
+      "recommended_ram_gb": 48,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 24,
+      "use_cases": ["chat", "code", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra", "groq"],
+      "notes": "Qwen 3 dense flagship. Rivals proprietary APIs on coding + math benchmarks. Workstation-only locally.",
+      "gguf": {
+        "repo_id": "Qwen/Qwen3-32B-Instruct-GGUF",
+        "filename": "Qwen3-32B-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwq:32b",
+      "display_name": "QwQ 32B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 32.8,
+      "size_gb": 19.5,
+      "min_ram_gb": 32,
+      "recommended_ram_gb": 48,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 24,
+      "use_cases": ["reasoning", "chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
+      "notes": "Qwen team's reasoning-tuned 32B. Visible chain-of-thought. Competitive with DeepSeek R1 32B at similar size.",
+      "gguf": {
+        "repo_id": "bartowski/QwQ-32B-Preview-GGUF",
+        "filename": "QwQ-32B-Preview-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "granite3.1:8b",
+      "display_name": "Granite 3.1 8B",
+      "family": "granite",
+      "vendor": "IBM",
+      "param_count_b": 8.17,
+      "size_gb": 4.9,
+      "min_ram_gb": 10,
+      "recommended_ram_gb": 14,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 8,
+      "use_cases": ["chat", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["watsonx", "openrouter"],
+      "notes": "IBM's enterprise-tuned 8B. Apache 2.0. Good default for regulated verticals (finance/healthcare).",
+      "gguf": {
+        "repo_id": "bartowski/granite-3.1-8b-instruct-GGUF",
+        "filename": "granite-3.1-8b-instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "nemotron-nano:8b",
+      "display_name": "Nemotron Nano 8B",
+      "family": "nemotron",
+      "vendor": "NVIDIA",
+      "param_count_b": 8.03,
+      "size_gb": 4.7,
+      "min_ram_gb": 10,
+      "recommended_ram_gb": 14,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 8,
+      "use_cases": ["chat", "reasoning"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["nvidia_nim", "openrouter"],
+      "notes": "NVIDIA's 2025 small Nemotron tuning. Optimized for RTX 3060/4060-class GPUs.",
+      "gguf": {
+        "repo_id": "bartowski/Llama-3.1-Nemotron-Nano-8B-v1-GGUF",
+        "filename": "Llama-3.1-Nemotron-Nano-8B-v1-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "mistral-small:24b",
+      "display_name": "Mistral Small 3.1 24B",
+      "family": "mistral",
+      "vendor": "Mistral AI",
+      "param_count_b": 24.0,
+      "size_gb": 14.0,
+      "min_ram_gb": 24,
+      "recommended_ram_gb": 32,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 18,
+      "use_cases": ["chat", "code", "vision"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["mistral_api", "together", "openrouter"],
+      "notes": "Mistral's 2025 mid-size refresh. Multimodal, 128K context. Direct successor to Mistral Small 22B.",
+      "gguf": {
+        "repo_id": "bartowski/Mistral-Small-3.1-24B-Instruct-2503-GGUF",
+        "filename": "Mistral-Small-3.1-24B-Instruct-2503-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "magistral-small:24b",
+      "display_name": "Magistral Small 24B",
+      "family": "mistral",
+      "vendor": "Mistral AI",
+      "param_count_b": 23.6,
+      "size_gb": 14.0,
+      "min_ram_gb": 24,
+      "recommended_ram_gb": 32,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 18,
+      "use_cases": ["reasoning", "chat"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["mistral_api", "together", "openrouter"],
+      "notes": "Mistral's 2025 open reasoning model. Chain-of-thought tuned. Pairs with Mistral Small 3.1 for a reasoning/chat split.",
+      "gguf": {
+        "repo_id": "bartowski/Magistral-Small-2506-GGUF",
+        "filename": "Magistral-Small-2506-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gpt-oss:20b",
+      "display_name": "gpt-oss 20B",
+      "family": "gpt-oss",
+      "vendor": "OpenAI",
+      "param_count_b": 21.0,
+      "size_gb": 12.5,
+      "min_ram_gb": 20,
+      "recommended_ram_gb": 28,
+      "min_vram_gb": 0,
+      "recommended_vram_gb": 16,
+      "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["local", "custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra", "cerebras"],
+      "notes": "OpenAI's 2025 open-weight release (Apache 2.0). MoE architecture, reasoning-tuned. Widely hosted on inference clouds.",
+      "gguf": {
+        "repo_id": "bartowski/gpt-oss-20b-GGUF",
+        "filename": "gpt-oss-20b-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "gpt-oss:120b",
+      "display_name": "gpt-oss 120B",
+      "family": "gpt-oss",
+      "vendor": "OpenAI",
+      "param_count_b": 116.8,
+      "size_gb": 70.0,
+      "min_ram_gb": 96,
+      "recommended_ram_gb": 128,
+      "min_vram_gb": 64,
+      "recommended_vram_gb": 96,
+      "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra", "cerebras"],
+      "notes": "OpenAI's 2025 open-weight flagship (Apache 2.0). Laptop-impossible — run via your own vLLM on 2× H100 or via Groq/Together/Cerebras for pennies per M tokens.",
+      "gguf": {
+        "repo_id": "bartowski/gpt-oss-120b-GGUF",
+        "filename": "gpt-oss-120b-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "kimi-k2:1t",
+      "display_name": "Kimi K2 (Moonshot 2025)",
+      "family": "kimi",
+      "vendor": "Moonshot AI",
+      "param_count_b": 1000.0,
+      "size_gb": 480.0,
+      "min_ram_gb": 512,
+      "recommended_ram_gb": 800,
+      "min_vram_gb": 320,
+      "recommended_vram_gb": 640,
+      "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["moonshot_api", "together", "openrouter", "deepinfra", "groq"],
+      "notes": "Moonshot's 2025 trillion-param MoE (~32B active per token). Not laptop-runnable. Reach it via Moonshot's API, OpenRouter, Together, Groq, or your own multi-node vLLM/SGLang deployment.",
+      "gguf": {
+        "repo_id": "unsloth/Kimi-K2-Instruct-GGUF",
+        "filename": "Kimi-K2-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "deepseek-v3.1:671b",
+      "display_name": "DeepSeek V3.1",
+      "family": "deepseek",
+      "vendor": "DeepSeek",
+      "param_count_b": 671.0,
+      "size_gb": 400.0,
+      "min_ram_gb": 512,
+      "recommended_ram_gb": 768,
+      "min_vram_gb": 320,
+      "recommended_vram_gb": 480,
+      "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["deepseek_api", "together", "openrouter", "deepinfra"],
+      "notes": "DeepSeek V3.1 refresh — 671B MoE, ~37B active. Frontier-class open weights. Multi-node inference or hosted API.",
+      "gguf": {
+        "repo_id": "unsloth/DeepSeek-V3.1-GGUF",
+        "filename": "DeepSeek-V3.1-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "deepseek-r1:671b",
+      "display_name": "DeepSeek R1 (full)",
+      "family": "deepseek",
+      "vendor": "DeepSeek",
+      "param_count_b": 671.0,
+      "size_gb": 400.0,
+      "min_ram_gb": 512,
+      "recommended_ram_gb": 768,
+      "min_vram_gb": 320,
+      "recommended_vram_gb": 480,
+      "use_cases": ["reasoning", "chat", "code"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["deepseek_api", "together", "openrouter", "deepinfra", "groq"],
+      "notes": "Full DeepSeek R1 (not distilled). Original o1-competitor. 671B MoE (~37B active). Use hosted API or a serious inference cluster.",
+      "gguf": {
+        "repo_id": "unsloth/DeepSeek-R1-GGUF",
+        "filename": "DeepSeek-R1-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "llama4-scout:109b",
+      "display_name": "Llama 4 Scout",
+      "family": "llama",
+      "vendor": "Meta",
+      "param_count_b": 109.0,
+      "size_gb": 65.0,
+      "min_ram_gb": 96,
+      "recommended_ram_gb": 128,
+      "min_vram_gb": 60,
+      "recommended_vram_gb": 96,
+      "use_cases": ["chat", "reasoning", "code", "vision"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra"],
+      "notes": "Meta's 2025 Llama 4 small-tier MoE — 109B total / 17B active. Multimodal. Fits a single 80GB H100 or serious workstation.",
+      "gguf": {
+        "repo_id": "bartowski/Llama-4-Scout-17B-16E-Instruct-GGUF",
+        "filename": "Llama-4-Scout-17B-16E-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "llama4-maverick:400b",
+      "display_name": "Llama 4 Maverick",
+      "family": "llama",
+      "vendor": "Meta",
+      "param_count_b": 400.0,
+      "size_gb": 240.0,
+      "min_ram_gb": 320,
+      "recommended_ram_gb": 512,
+      "min_vram_gb": 200,
+      "recommended_vram_gb": 320,
+      "use_cases": ["chat", "reasoning", "code", "vision"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["groq", "together", "openrouter", "deepinfra"],
+      "notes": "Meta's Llama 4 mid-tier MoE — 400B total / 17B active. Multimodal, GPT-4-class quality. Multi-node deployment or hosted API.",
+      "gguf": {
+        "repo_id": "bartowski/Llama-4-Maverick-17B-128E-Instruct-GGUF",
+        "filename": "Llama-4-Maverick-17B-128E-Instruct-Q4_K_M.gguf",
+        "sha256": null,
+        "size_bytes": null,
+        "quant": "Q4_K_M"
+      }
+    },
+    {
+      "model_id": "qwen3:235b-a22b",
+      "display_name": "Qwen 3 235B-A22B",
+      "family": "qwen",
+      "vendor": "Alibaba",
+      "param_count_b": 235.0,
+      "size_gb": 140.0,
+      "min_ram_gb": 192,
+      "recommended_ram_gb": 256,
+      "min_vram_gb": 120,
+      "recommended_vram_gb": 192,
+      "use_cases": ["chat", "reasoning", "code"],
+      "deployment_targets": ["custom_endpoint", "cloud_provider"],
+      "cloud_provider_availability": ["together", "openrouter", "deepinfra", "groq"],
+      "notes": "Qwen 3 flagship MoE — 235B total / 22B active. Hybrid reasoning. Multi-GPU workstation or hosted API.",
+      "gguf": {
+        "repo_id": "Qwen/Qwen3-235B-A22B-Instruct-GGUF",
+        "filename": "Qwen3-235B-A22B-Instruct-Q4_K_M.gguf",
         "sha256": null,
         "size_bytes": null,
         "quant": "Q4_K_M"
@@ -755,6 +1414,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 1,
       "use_cases": ["embed"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Recommended embedding model for RAG. 768-dim vectors."
     },
     {
@@ -769,6 +1429,7 @@
       "min_vram_gb": 0,
       "recommended_vram_gb": 2,
       "use_cases": ["embed"],
+      "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Higher-quality 1024-dim embeddings. Use when retrieval recall matters."
     }
   ]
