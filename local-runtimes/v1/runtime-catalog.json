@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "_meta": {
+    "schema_version": "1.0.0",
+    "catalog_version": "2026.07.10-1",
+    "description": "Pinned inference-runtime binaries for on-device model execution. Separate from local-models/v1/catalog.json (model weights / GGUF pointers). Consumers resolve the row for their platform key (e.g. darwin-arm64) and download the artifact URL — no GitHub release API guessing.",
+    "last_updated": "2026-07-10",
+    "catalog_governance": {
+      "canonical_source": "This file. Published to https://github.com/Eriador-Admin/eriador-model-catalog at local-runtimes/v1/runtime-catalog.json.",
+      "consumer_contract": "Desktop (Anfalas) fetches over HTTPS, validates against local-runtimes/v1/schema.json, caches to disk, and falls back to a bundled copy when remote is unreachable.",
+      "weights_track": "Model GGUF weights remain in local-models/v1/catalog.json (gguf.repo_id + gguf.filename → Hugging Face).",
+      "runtime_track": "This file — llama-server and future on-device engines.",
+      "future_cloud_track": "Planned: deployment_recipes for vLLM/SGLang/custom_endpoint bootstrap (orthogonal to laptop binaries; same Eriador repo, separate path)."
+    }
+  },
+  "runtimes": [
+    {
+      "runtime_key": "llama_cpp",
+      "display_name": "llama.cpp (llama-server)",
+      "description": "Default on-device inference engine for Belfalas Desktop. Spawned on loopback after model download.",
+      "provider": "ggml-org/llama.cpp",
+      "release_tag": "b9957",
+      "server_binary": "llama-server",
+      "platforms": {
+        "darwin-arm64": {
+          "asset_name": "llama-b9957-bin-macos-arm64.tar.gz",
+          "download_url": "https://github.com/ggml-org/llama.cpp/releases/download/b9957/llama-b9957-bin-macos-arm64.tar.gz",
+          "archive": "tar.gz",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "darwin-x64": {
+          "asset_name": "llama-b9957-bin-macos-x64.tar.gz",
+          "download_url": "https://github.com/ggml-org/llama.cpp/releases/download/b9957/llama-b9957-bin-macos-x64.tar.gz",
+          "archive": "tar.gz",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "linux-x64": {
+          "asset_name": "llama-b9957-bin-ubuntu-x64.tar.gz",
+          "download_url": "https://github.com/ggml-org/llama.cpp/releases/download/b9957/llama-b9957-bin-ubuntu-x64.tar.gz",
+          "archive": "tar.gz",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "win32-x64": {
+          "asset_name": "llama-b9957-bin-win-cpu-x64.zip",
+          "download_url": "https://github.com/ggml-org/llama.cpp/releases/download/b9957/llama-b9957-bin-win-cpu-x64.zip",
+          "archive": "zip",
+          "sha256": null,
+          "size_bytes": null
+        }
+      }
+    }
+  ]
+}

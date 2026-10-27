@@ -12,12 +12,17 @@ Open-source LLM releases move fast. New model families ship every month, and exi
 
 ```
 local-models/v1/
-├── catalog.json     ← the file consumers fetch
-└── schema.json      ← JSON Schema (draft-07) that catalog.json must validate against
+├── catalog.json     ← model weights / GGUF pointers (consumers fetch for picker UI)
+└── schema.json
+
+local-runtimes/v1/
+├── runtime-catalog.json  ← pinned llama-server (etc.) binaries per platform
+└── schema.json
 
 scripts/
-├── validate.mjs           ← schema + duplicate-id check (runs in CI on every PR)
-└── verify-hf-urls.mjs     ← HEAD every gguf URL against Hugging Face (runs in CI, warn-only)
+├── validate.mjs           ← schema + duplicate-id check (models)
+├── validate-runtimes.mjs  ← schema check (runtime binaries)
+└── verify-hf-urls.mjs     ← HEAD every gguf URL against Hugging Face (warn-only)
 
 .github/workflows/
 └── validate.yml           ← runs the two scripts on every push + PR
@@ -25,10 +30,16 @@ scripts/
 
 ## Consuming the catalog
 
-Fetch the raw JSON over anonymous HTTPS:
+**Model weights** (GGUF pointers, hardware requirements):
 
 ```
 https://raw.githubusercontent.com/Eriador-Admin/eriador-model-catalog/main/local-models/v1/catalog.json
+```
+
+**Runtime binaries** (llama-server per OS/arch — Anfalas Desktop):
+
+```
+https://raw.githubusercontent.com/Eriador-Admin/eriador-model-catalog/main/local-runtimes/v1/runtime-catalog.json
 ```
 
 No credentials or tokens are ever required — the repo is fully public and the URL is stable. A production-grade consumer should:
@@ -95,9 +106,9 @@ If a model needs to be replaced (upstream repo renamed, quant maintainer moved),
 
 ## What this repo intentionally is *not*
 
-- Not a **weights mirror.** GGUFs live on Hugging Face; we point at them.
-- Not a **cloud provider directory.** BYOK cloud API keys are configured per-user in whatever app consumes this catalog; provider adapters ship with those apps, not here.
-- Not a **runtime.** The actual inference engine (llama.cpp, Ollama, etc.) is orthogonal — this repo just says *which* models exist and how much hardware they want.
+- Not a **weights mirror.** GGUFs live on Hugging Face; we point at them in `local-models/v1`.
+- Not a **cloud provider directory.** BYOK keys live in the consuming app.
+- **Runtime vs model:** `local-runtimes/v1` pins inference *engines* (llama-server today). `local-models/v1` pins *model weights*. Same Eriador repo, two tracks. Future `deployment_recipes` for cloud/self-hosted bootstrap may join this repo as a third track.
 
 ## Security
 

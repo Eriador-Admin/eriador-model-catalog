@@ -2,7 +2,7 @@
   "schema_version": "1.1.0",
   "_meta": {
     "schema_version": "1.1.0",
-    "catalog_version": "2026.07.10-1",
+    "catalog_version": "2026.07.10-3",
     "description": "Curated open-source model catalog with per-model hardware requirements. Each row is bucketed as 'recommended' / 'possible' / 'insufficient' for the caller's detected hardware. Covers common families (Llama, Qwen, Gemma, Phi, DeepSeek, Mistral) plus longer-tail vendors (Moonshot / Kimi K2 / Kimi-VL, Cohere Command R / Aya, 01.AI Yi, BigCode StarCoder, NVIDIA Nemotron, AllenAI OLMo, IBM Granite, HuggingFaceTB SmolLM2). Session 69 (2026-07-10) additions: Qwen 3, Gemma 3, Mistral Small 3.1, Magistral Small, QwQ 32B, gpt-oss 20B/120B, DeepSeek R1 Distill 1.5B, Granite 3.1 2B/8B, SmolLM2 (135M/360M/1.7B), Nemotron Nano 8B, plus frontier/custom-endpoint rows (Kimi K2, DeepSeek V3.1, DeepSeek R1 671B, Llama 4 Scout/Maverick, Qwen 3 235B-A22B) and the new `deployment_targets` field per §5.36 (Models + Connections IA). Rows with a 'gguf' block include a Hugging Face pointer so a local llama.cpp-style runtime can download the weights directly.",
     "last_updated": "2026-07-10",
     "catalog_governance": {
@@ -1027,8 +1027,8 @@
       "deployment_targets": ["local", "custom_endpoint"],
       "notes": "Qwen 3 small tier — hybrid reasoning (fast / think toggle). Strong for its size.",
       "gguf": {
-        "repo_id": "Qwen/Qwen3-4B-Instruct-GGUF",
-        "filename": "Qwen3-4B-Instruct-Q4_K_M.gguf",
+        "repo_id": "bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF",
+        "filename": "Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
         "sha256": null,
         "size_bytes": null,
         "quant": "Q4_K_M"
@@ -1050,8 +1050,8 @@
       "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Qwen 3 general-purpose 8B — direct successor to the widely-used Qwen 2.5 7B. Hybrid reasoning.",
       "gguf": {
-        "repo_id": "Qwen/Qwen3-8B-Instruct-GGUF",
-        "filename": "Qwen3-8B-Instruct-Q4_K_M.gguf",
+        "repo_id": "bartowski/Qwen_Qwen3-8B-GGUF",
+        "filename": "Qwen_Qwen3-8B-Q4_K_M.gguf",
         "sha256": null,
         "size_bytes": null,
         "quant": "Q4_K_M"
@@ -1073,8 +1073,8 @@
       "cloud_provider_availability": ["together", "openrouter", "deepinfra"],
       "notes": "Qwen 3 mid-tier. Best all-around chat + code + reasoning under 30B.",
       "gguf": {
-        "repo_id": "Qwen/Qwen3-14B-Instruct-GGUF",
-        "filename": "Qwen3-14B-Instruct-Q4_K_M.gguf",
+        "repo_id": "bartowski/Qwen_Qwen3-14B-GGUF",
+        "filename": "Qwen_Qwen3-14B-Q4_K_M.gguf",
         "sha256": null,
         "size_bytes": null,
         "quant": "Q4_K_M"
@@ -1096,8 +1096,8 @@
       "cloud_provider_availability": ["together", "openrouter", "deepinfra", "groq"],
       "notes": "Qwen 3 dense flagship. Rivals proprietary APIs on coding + math benchmarks. Workstation-only locally.",
       "gguf": {
-        "repo_id": "Qwen/Qwen3-32B-Instruct-GGUF",
-        "filename": "Qwen3-32B-Instruct-Q4_K_M.gguf",
+        "repo_id": "bartowski/Qwen_Qwen3-32B-GGUF",
+        "filename": "Qwen_Qwen3-32B-Q4_K_M.gguf",
         "sha256": null,
         "size_bytes": null,
         "quant": "Q4_K_M"

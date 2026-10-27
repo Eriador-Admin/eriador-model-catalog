@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Eriador-Admin/eriador-model-catalog/main/local-runtimes/v1/schema.json",
+  "title": "Eriador Local Runtime Catalog (v1)",
+  "description": "Pinned inference-engine binaries for on-device execution (llama-server today; more engines later). Orthogonal to local-models/v1/catalog.json which lists model weights. Consumers fetch runtime-catalog.json, validate, pick the platform row, and download the artifact — no release-page regex matching.",
+  "type": "object",
+  "required": ["schema_version", "runtimes"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semver of this schema. Bump MAJOR on breaking shape changes."
+    },
+    "_meta": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "runtimes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/RuntimeRow" }
+    }
+  },
+  "$defs": {
+    "PlatformArtifact": {
+      "type": "object",
+      "required": ["asset_name", "download_url", "archive"],
+      "additionalProperties": true,
+      "properties": {
+        "asset_name": { "type": "string", "minLength": 1 },
+        "download_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "archive": {
+          "type": "string",
+          "enum": ["zip", "tar.gz"]
+        },
+        "sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "size_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        }
+      }
+    },
+    "RuntimeRow": {
+      "type": "object",
+      "required": ["runtime_key", "display_name", "release_tag", "server_binary", "platforms"],
+      "additionalProperties": true,
+      "properties": {
+        "runtime_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable id (llama_cpp, ollama_hosted, ...)."
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "provider": { "type": "string" },
+        "release_tag": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Upstream release id (e.g. b9957)."
+        },
+        "server_binary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Executable name inside the archive (llama-server or llama-server.exe)."
+        },
+        "platforms": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/PlatformArtifact" }
+        }
+      }
+    }
+  }
+}
